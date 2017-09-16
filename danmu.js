@@ -35,7 +35,7 @@
         videoHeight = videoContainer.offsetHeight;
 
     var trackHeight = (options && options.Height) || 24;
-    var remainder = videoHeight % trackHeight;
+    var reminder = videoHeight % trackHeight;
     var trackNum = Math.floor(videoHeight / trackHeight);
 
     this.trackHeight = trackHeight; //轨道高度
@@ -45,8 +45,8 @@
     this.el = danmuEl;    //弹幕DOM元素
 
     for (var i = 0; i < trackNum; i++) {
-      if (i == trackNum - 1) {
-        this.trackList.push(new Track(trackHeight + remainder));
+      if (i === trackNum - 1) {
+        this.trackList.push(new Track(trackHeight + reminder));
       }
       else {
         this.trackList.push(new Track(trackHeight));
@@ -67,6 +67,10 @@
       if (!danmuItem.speed) {
         danmuItem.speed = getRandomSpeed(this.videoWidth);
       }
+      if (!danmuItem.size) {
+        danmuItem.size = Math.floor(Math.random() * 24) + 18;
+        // danmuItem.size = 30;
+      }
     }.bind(this));
     this.danmuList = this.danmuList.concat(danmuList);
   };
@@ -85,20 +89,20 @@
           if (this.trackList[j].isExistWaitDanmu) { //还有未完全进入video视口的弹幕，轨道不能用
             continue;
           }
-          if (this.danmuList[i].size > this.trackList[j].Height) { //需要拼接轨道
-            if (j == trackLen - 1) {
+          if (this.danmuList[i].size > this.trackList[j].trackHeight) { //需要拼接轨道
+            if (j == this.trackList.length - 1) {
               continue; //没有可以拼接的轨道
             }
             else {
               var danmuSize = this.danmuList[i].size;
-              var curTrackHeight = this.trackList[j].Height;
+              var curTrackHeight = this.trackList[j].trackHeight;
               var curIndex = j + 1;
               var trackfound = false;
-              while (curIndex < trackLen) {
+              while (curIndex < this.trackList.length) {
                 if (this.trackList[curIndex].isExistWaitDanmu || this.trackList[curIndex].thresholdV < this.danmuList[i].speed) {
                   break;
                 }
-                curTrackHeight += this.trackList[curIndex].Height;
+                curTrackHeight += this.trackList[curIndex].trackHeight;
                 if (curTrackHeight > danmuSize) { //存在多个轨道拼接能够容纳该弹幕
                   for (var beginIndex = j; beginIndex <= curIndex; beginIndex++) {
                     // this.trackList[beginIndex].isUsed = true;
@@ -122,6 +126,7 @@
           else {
             if (this.trackList[j].thresholdV >= this.danmuList[i].speed) {
               this.trackList[j].isExistWaitDanmu = true;
+              // this.trackList[j].isUsed = true;
               this.trackList[j].thresholdV = this.danmuList[i].speed;
               this.trackList[j].danmuNum += 1;
               this.danmuList[i].isScroll = true;
@@ -142,7 +147,7 @@
    * @param {number} [endIndex] [结束的轨道index]
    */
   Danmu.prototype._danmuInsert = function(danmuIndex, beginIndex, endIndex) {
-    var danmuSize = this.danmuList[danmuIndex].size || 18;
+    var danmuSize = this.danmuList[danmuIndex].size;
     var danmuColor = this.danmuList[danmuIndex].color || getRandomColor();
     var danmuContent = this.danmuList[danmuIndex].content || '弹幕啊';
 
@@ -156,7 +161,7 @@
     danmuNode.className = 'danmu-node';
     danmuNode.innerHTML = danmuContent;
     danmuNode.style.cssText = 'position: absolute; display: inline-block; color: ' + danmuColor +
-                              '; font-size: ' + danmuSize + 'px; top: ' + offsetTop +
+                              '; font-size: ' + (danmuSize) + 'px; line-height: ' + danmuSize + 'px; top: ' + offsetTop +
                               'px; transform: translateX(' + offsetLeft + 'px);';
     this.el.appendChild(danmuNode);
     this._danmuAnimate(danmuIndex, danmuNode, beginIndex, endIndex);
@@ -194,6 +199,7 @@
         for (var i = beginIndex; i <= endIndex; i++) {
           _this.trackList[i].danmuNum -= 1;
           if (_this.trackList[i].danmuNum === 0) {
+            // _this.trackList[i].isUsed = false;
             _this.trackList[i].thresholdV = Number.MAX_SAFE_INTEGER;
           }
         }
@@ -207,10 +213,11 @@
    * @param {number} [trackHeight] [轨道的高度]
    */
   function Track(trackHeight) {
-    this.trackHeight = trackHeight;  //轨道的高度
-    this.thresholdV = Number.MAX_SAFE_INTEGER;             //轨道当前的弹幕限制速度
-    this.isExistWaitDanmu = false;   //轨道是否存在还未完全进入video视口的弹幕
-    this.danmuNum = 0;        //轨道中滚动弹幕个数
+    this.trackHeight = trackHeight;              // 轨道的高度
+    this.thresholdV = Number.MAX_SAFE_INTEGER;   // 轨道当前的弹幕限制速度
+    // this.isUsed = false;                         // 轨道是否被使用
+    this.isExistWaitDanmu = false;               // 轨道是否存在还未完全进入video视口的弹幕
+    this.danmuNum = 0;                           // 轨道中滚动弹幕个数
   }
 
   /**
