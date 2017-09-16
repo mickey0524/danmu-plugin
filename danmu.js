@@ -1,5 +1,7 @@
 /**
  * 自制的H5弹幕播放插件
+ * _开头的是private函数，在外部请不要调用
+ * 没有_开头的是public函数，是Danmu插件暴露给使用者的函数，可以调用
  */
 
 (function(window) {
@@ -43,6 +45,7 @@
     this.trackList = [];  //轨道列表
     this.danmuList = [];  //弹幕列表
     this.el = danmuEl;    //弹幕DOM元素
+    this.faskDanmu = (options && options.faskDanmu) || false;
 
     for (var i = 0; i < trackNum; i++) {
       if (i === trackNum - 1) {
@@ -69,10 +72,17 @@
       }
       if (!danmuItem.size) {
         danmuItem.size = Math.floor(Math.random() * 24) + 18;
-        // danmuItem.size = 30;
       }
     }.bind(this));
     this.danmuList = this.danmuList.concat(danmuList);
+  };
+
+  /**
+   * [是否开始弹幕追击插入模式，关闭该模式的轨道弹幕速度有限制，后面插入的弹幕速度必须小于前面的，这样容易有很多留白]
+   * @param  {boolean} faskDanmu [flag为true，则开启，反之，则关闭]
+   */
+  Danmu.prototype.openFaskDanmu = function(faskDanmu) {
+    this.faskDanmu = faskDanmu;
   };
 
   /**
@@ -86,7 +96,9 @@
           continue; //弹幕已经在轨道中滚动
         }
         for (var j = 0; j < this.trackList.length; j++) {
-          if (this.trackList[j].isExistWaitDanmu) { //还有未完全进入video视口的弹幕，轨道不能用
+          if (this.trackList[j].isExistWaitDanmu || //还有未完全进入video视口的弹幕，轨道不能用
+             (this.trackList[j].thresholdV < this.danmuList[i].speed &&
+             (!this.faskDanmu || !compareSpeed(this.trackList[j], this.danmuList[i], this.videoWidth)))) {
             continue;
           }
           if (this.danmuList[i].size > this.trackList[j].trackHeight) { //需要拼接轨道
@@ -99,13 +111,15 @@
               var curIndex = j + 1;
               var trackfound = false;
               while (curIndex < this.trackList.length) {
-                if (this.trackList[curIndex].isExistWaitDanmu || this.trackList[curIndex].thresholdV < this.danmuList[i].speed) {
+                if (this.trackList[curIndex].isExistWaitDanmu ||
+                   (this.trackList[curIndex].thresholdV < this.danmuList[i].speed &&
+                   (!this.faskDanmu || !compareSpeed(this.trackList[curIndex], this.danmuList[i], this.videoWidth)))) {
+                  j = curIndex;
                   break;
                 }
                 curTrackHeight += this.trackList[curIndex].trackHeight;
                 if (curTrackHeight > danmuSize) { //存在多个轨道拼接能够容纳该弹幕
                   for (var beginIndex = j; beginIndex <= curIndex; beginIndex++) {
-                    // this.trackList[beginIndex].isUsed = true;
                     this.trackList[beginIndex].isExistWaitDanmu = true;
                     this.trackList[beginIndex].thresholdV = this.danmuList[i].speed;
                     this.trackList[beginIndex].danmuNum += 1;
@@ -124,16 +138,13 @@
             }
           }
           else {
-            if (this.trackList[j].thresholdV >= this.danmuList[i].speed) {
-              this.trackList[j].isExistWaitDanmu = true;
-              // this.trackList[j].isUsed = true;
-              this.trackList[j].thresholdV = this.danmuList[i].speed;
-              this.trackList[j].danmuNum += 1;
-              this.danmuList[i].isScroll = true;
-              this._danmuInsert(i, j, j);
-              i -= 1; //_danmuAnimate函数中删除了节点，不剪一会遗漏循环项
-              break;
-            }
+            this.trackList[j].isExistWaitDanmu = true;
+            this.trackList[j].thresholdV = this.danmuList[i].speed;
+            this.trackList[j].danmuNum += 1;
+            this.danmuList[i].isScroll = true;
+            this._danmuInsert(i, j, j);
+            i -= 1; //_danmuAnimate函数中删除了节点，不剪一会遗漏循环项
+            break;
           }
         }
       }
@@ -164,6 +175,9 @@
                               '; font-size: ' + (danmuSize) + 'px; line-height: ' + danmuSize + 'px; top: ' + offsetTop +
                               'px; transform: translateX(' + offsetLeft + 'px);';
     this.el.appendChild(danmuNode);
+    for (var i = beginIndex; i <= endIndex; i++) {
+      this.trackList[i].lastScrollDanmu = danmuNode;
+    }
     this._danmuAnimate(danmuIndex, danmuNode, beginIndex, endIndex);
   };
 
@@ -199,7 +213,6 @@
         for (var i = beginIndex; i <= endIndex; i++) {
           _this.trackList[i].danmuNum -= 1;
           if (_this.trackList[i].danmuNum === 0) {
-            // _this.trackList[i].isUsed = false;
             _this.trackList[i].thresholdV = Number.MAX_SAFE_INTEGER;
           }
         }
@@ -209,15 +222,36 @@
   };
 
   /**
+   * [开启弹幕追击模式的时候，调用该函数判断当前弹幕是否能够插入，其实就是一个追击问题]
+   * @param {Class(Track)} [track] [轨道]
+   * @param {object} [danmu] [弹幕]
+   * @param {number} [videoWidth] [video的宽度]
+   * @return {boolean} [如果弹幕不会碰撞，允许插入的时候，返回true，否则返回false]
+   */
+  function compareSpeed(track, danmu, videoWidth) {
+    if (!track.lastScrollDanmu) {
+      return true;
+    }
+    var targetNode = track.lastScrollDanmu;  //需要追击的节点
+    var targetOffset = targetNode.style.transform.replace(/[^0-9|\-|\.]/g, '');
+    var targetTime = (Number(targetNode.offsetWidth) + Number(targetOffset)) / track.thresholdV;
+    var chaserTime = videoWidth / danmu.speed;
+    if (chaserTime >= targetTime) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * [轨道构造函数，将播放器按高度进行分割，形成一个一个轨道]
    * @param {number} [trackHeight] [轨道的高度]
    */
   function Track(trackHeight) {
     this.trackHeight = trackHeight;              // 轨道的高度
     this.thresholdV = Number.MAX_SAFE_INTEGER;   // 轨道当前的弹幕限制速度
-    // this.isUsed = false;                         // 轨道是否被使用
     this.isExistWaitDanmu = false;               // 轨道是否存在还未完全进入video视口的弹幕
     this.danmuNum = 0;                           // 轨道中滚动弹幕个数
+    this.lastScrollDanmu = null;                 // 最后添加进轨道的弹幕元素，用于追击插入弹幕的时候使用
   }
 
   /**

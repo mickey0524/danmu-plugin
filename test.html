@@ -29,9 +29,9 @@
   </div>
   <script type="text/javascript" src="./danmu.js"></script>
   <script type="text/javascript">
-    var danmuPlugin = new Danmu('danmu-plugin');
+    var danmuPlugin = new Danmu('danmu-plugin', { faskDanmu: true });
     var danmuList = [];
-    for (var i = 0; i < 50; i++) {
+    for (var i = 0; i < 100; i++) {
       danmuList.push({});
     }
     danmuPlugin.updateDanmuList(danmuList);
