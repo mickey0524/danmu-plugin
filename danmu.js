@@ -64,7 +64,10 @@
     }
     danmuList.forEach(function(danmuItem) {
       danmuItem.isScroll = false;
-    });
+      if (!danmuItem.speed) {
+        danmuItem.speed = getRandomSpeed(this.videoWidth);
+      }
+    }.bind(this));
     this.danmuList = this.danmuList.concat(danmuList);
   };
 
@@ -74,11 +77,11 @@
    */
   Danmu.prototype._requestTrack = function() {
     this.reqTrackTimer = setInterval(function() { //弹幕列表定时请求轨道是否能够插入
-      for (var i = 0, danmuLen = this.danmuList.length; i < danmuLen; i++) {
+      for (var i = 0; i < this.danmuList.length; i++) {
         if (this.danmuList[i].isScroll) {
           continue; //弹幕已经在轨道中滚动
         }
-        for (var j = 0, trackLen = this.trackList.length; j < trackLen; j++) {
+        for (var j = 0; j < this.trackList.length; j++) {
           if (this.trackList[j].isExistWaitDanmu) { //还有未完全进入video视口的弹幕，轨道不能用
             continue;
           }
@@ -101,9 +104,11 @@
                     // this.trackList[beginIndex].isUsed = true;
                     this.trackList[beginIndex].isExistWaitDanmu = true;
                     this.trackList[beginIndex].thresholdV = this.danmuList[i].speed;
+                    this.trackList[beginIndex].danmuNum += 1;
                   }
                   this.danmuList[i].isScroll = true;
                   this._danmuInsert(i, j, curIndex);
+                  i -= 1; //_danmuAnimate函数中删除了节点，不剪一会遗漏循环项
                   trackfound = true;
                   break;
                 }
@@ -115,12 +120,15 @@
             }
           }
           else {
-            // this.trackList[j].isUsed = true;
-            this.trackList[j].isExistWaitDanmu = true;
-            this.trackList[j].thresholdV = this.danmuList[i].speed;
-            this.danmuList[i].isScroll = true;
-            this._danmuInsert(i, j, j);
-            break;
+            if (this.trackList[j].thresholdV >= this.danmuList[i].speed) {
+              this.trackList[j].isExistWaitDanmu = true;
+              this.trackList[j].thresholdV = this.danmuList[i].speed;
+              this.trackList[j].danmuNum += 1;
+              this.danmuList[i].isScroll = true;
+              this._danmuInsert(i, j, j);
+              i -= 1; //_danmuAnimate函数中删除了节点，不剪一会遗漏循环项
+              break;
+            }
           }
         }
       }
@@ -136,7 +144,7 @@
   Danmu.prototype._danmuInsert = function(danmuIndex, beginIndex, endIndex) {
     var danmuSize = this.danmuList[danmuIndex].size || 18;
     var danmuColor = this.danmuList[danmuIndex].color || getRandomColor();
-    var danmuContent = this.danmuList[danmuIndex].content || 'asdasd';
+    var danmuContent = this.danmuList[danmuIndex].content || '弹幕啊';
 
     var HeightSum = 0;
     for (var i = beginIndex; i <= endIndex; i++) {
@@ -163,12 +171,13 @@
    */
   Danmu.prototype._danmuAnimate = function(danmuIndex, danmuNode, beginIndex, endIndex) {
     var danmuWidth = danmuNode.offsetWidth;
-    var danmuSpeed = this.danmuList[danmuIndex].speed || 60; //弹幕的速度定义是1s移动多少px
+    var danmuSpeed = this.danmuList[danmuIndex].speed; //弹幕的速度定义是1s移动多少px
     var frameDistance = danmuSpeed / 60; // 1s requestAnimationFrame渲染60次
     var changeNoWait = true;
     var _this = this;
+    this.danmuList.splice(danmuIndex, 1); //弹幕插入完毕，删除节点
     function step() {
-      var curOffset = danmuNode.style.transform.replace(/[^0-9|\-]/g, '');
+      var curOffset = danmuNode.style.transform.replace(/[^0-9|\-|\.]/g, '');
       var newOffset = curOffset - frameDistance;
       danmuNode.style.transform = 'translateX(' + newOffset + 'px)';
       if (newOffset > -danmuWidth) {
@@ -181,8 +190,13 @@
         requestAnimationFrame(step);
       }
       else {
-        _this.danmuList.splice(danmuIndex, 1); //弹幕滚动完毕，删除节点
         danmuNode.parentNode.removeChild(danmuNode); //从DOM中删除该弹幕节点
+        for (var i = beginIndex; i <= endIndex; i++) {
+          _this.trackList[i].danmuNum -= 1;
+          if (_this.trackList[i].danmuNum === 0) {
+            _this.trackList[i].thresholdV = Number.MAX_SAFE_INTEGER;
+          }
+        }
       }
     }
     requestAnimationFrame(step);
@@ -194,9 +208,9 @@
    */
   function Track(trackHeight) {
     this.trackHeight = trackHeight;  //轨道的高度
-    // this.isUsed = false;             //轨道是否被占用，这个需要和isExistWaitDanmu区分开
-    this.thresholdV = 0;             //轨道当前的弹幕限制速度
+    this.thresholdV = Number.MAX_SAFE_INTEGER;             //轨道当前的弹幕限制速度
     this.isExistWaitDanmu = false;   //轨道是否存在还未完全进入video视口的弹幕
+    this.danmuNum = 0;        //轨道中滚动弹幕个数
   }
 
   /**
@@ -215,11 +229,23 @@
 
   /**
    * [随机获取一种颜色]
+   * @return {string} [弹幕的颜色]
    */
   function getRandomColor() {
     var redRatio = Math.floor(Math.random() * 256),
         greenRatio = Math.floor(Math.random() * 256),
         blueRatio = Math.floor(Math.random() * 256);
     return 'rgb(' + redRatio + ', ' + greenRatio + ', ' + blueRatio + ')';
+  }
+
+  /**
+   * [随机获取弹幕滚动的速度]
+   * @param {number} [videoWidth] [video的宽度]
+   * @return {number} [弹幕滚动的速度]
+   */
+  function getRandomSpeed(videoWidth) {
+    var MIN_SPEED = videoWidth / 10;
+    var speed = Math.ceil(Math.random() * videoWidth / 2);
+    return Math.max(speed, MIN_SPEED);
   }
 })(window);
