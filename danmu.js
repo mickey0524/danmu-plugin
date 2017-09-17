@@ -28,10 +28,10 @@
       throw new Error('The DOM node of danmu plugin is in wrong position!');
     }
     var videoContainer = danmuEl.parentNode;
+    videoContainer.style.overflow = 'hidden';
     var parentPostiton = window.getComputedStyle(videoContainer).position;  //获取当前父亲容器的position
     if (parentPostiton == 'static') {
       videoContainer.style.position = 'relative';                           //需要的时候设置为relative，用于弹幕绝对布局的基准
-      videoContainer.style.overflow = 'hidden';
     }
     var videoWidth = videoContainer.offsetWidth,
         videoHeight = videoContainer.offsetHeight;
@@ -46,6 +46,7 @@
     this.danmuList = [];  //弹幕列表
     this.el = danmuEl;    //弹幕DOM元素
     this.faskDanmu = (options && options.faskDanmu) || false;
+    this.faskDanmuSpace = (options && options.faskDanmu) || 0;
 
     for (var i = 0; i < trackNum; i++) {
       if (i === trackNum - 1) {
@@ -79,10 +80,14 @@
 
   /**
    * [是否开始弹幕追击插入模式，关闭该模式的轨道弹幕速度有限制，后面插入的弹幕速度必须小于前面的，这样容易有很多留白]
-   * @param  {boolean} faskDanmu [flag为true，则开启，反之，则关闭]
+   * @param {boolean} faskDanmu [flag为true，则开启，反之，则关闭]
+   * @param {number} faskDanmuSpace [弹幕之间的最小间距，可选的参数]
    */
-  Danmu.prototype.openFaskDanmu = function(faskDanmu) {
+  Danmu.prototype.openFaskDanmu = function(faskDanmu, faskDanmuSpace) {
     this.faskDanmu = faskDanmu;
+    if (faskDanmuSpace) {
+      this.faskDanmuSpace = faskDanmuSpace;
+    }
   };
 
   /**
@@ -235,7 +240,7 @@
     var targetNode = track.lastScrollDanmu;  //需要追击的节点
     var targetOffset = targetNode.style.transform.replace(/[^0-9|\-|\.]/g, '');
     var targetTime = (Number(targetNode.offsetWidth) + Number(targetOffset)) / track.thresholdV;
-    var chaserTime = videoWidth / danmu.speed;
+    var chaserTime = (videoWidth - this.faskDanmuSpace) / danmu.speed;
     if (chaserTime >= targetTime) {
       return true;
     }

@@ -7,6 +7,10 @@
     .video-player {
       width: 600px;
       height: 300px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
     }
     video {
       width: 600px;
@@ -16,9 +20,6 @@
 </head>
 <body>
   <div class="container">
-<!--     <div style="height: 40px">
-      <span style="display: inline-block; font-size: 40px; line-height: 40px;">dsad</span>
-    </div> -->
     <div class="video-player">
       <video controls>
         <source src="http://static.qiakr.com/movie/0060202.mp4" type="video/mp4">
@@ -29,9 +30,9 @@
   </div>
   <script type="text/javascript" src="./danmu.js"></script>
   <script type="text/javascript">
-    var danmuPlugin = new Danmu('danmu-plugin', { faskDanmu: true });
+    var danmuPlugin = new Danmu('danmu-plugin', { faskDanmu: true, faskDanmuSpace: 50 });
     var danmuList = [];
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < 20; i++) {
       danmuList.push({});
     }
     danmuPlugin.updateDanmuList(danmuList);
