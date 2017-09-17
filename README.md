@@ -6,7 +6,7 @@ A danmu plugin which can be used in video tag
 
 ## 背景介绍 (introduce)
 
-看吃鸡直播的时候，突发奇想想实现一套适用于H5video的弹幕插件，对应的博客地址为[blog-address](https://mickey0524.github.io/2017/09/16/danmu-plugin-design/)，里面有实现的一些思路
+看吃鸡直播的时候，突发奇想想实现一套适用于H5video的弹幕插件，对应的博客地址为[弹幕插件的设计与实现](https://mickey0524.github.io/2017/09/16/danmu-plugin-design/)，里面有实现的一些思路
 
 ## 依赖（dependence）
 
