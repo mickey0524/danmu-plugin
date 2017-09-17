@@ -6,7 +6,7 @@ A danmu plugin which can be used in video tag
 
 ## 背景介绍 (introduce)
 
-看吃鸡直播的时候，突发奇想想实现一套适用于H5video的弹幕插件
+看吃鸡直播的时候，突发奇想想实现一套适用于H5video的弹幕插件，对应的博客地址为[blog-address](https://mickey0524.github.io/2017/09/16/danmu-plugin-design/)，里面有实现的一些思路
 
 ## 依赖（dependence）
 
@@ -58,6 +58,12 @@ openFaskDanmu(faskDanmu, faskDanmuSpace) 更新插件工作模式
 | :------------: | :-------------: | :-----------: |
 | faskDanmu      | 是否开始追击模式   | true/false    |
 | faskDanmuSpace | 追击模式下弹幕间距 | number，默认为0 |
+
+openDanmu() 打开弹幕插件开关
+
+closeDanmu() 关闭弹幕插件开关
+
+toggleDanmu() 转换弹幕插件开关
 
 ## 示例
 

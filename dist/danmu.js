@@ -13,7 +13,7 @@
    */
   window.Danmu = function(className, options) {
     this._init(className, options);
-    this._requestTrack();
+    // this._requestTrack();
   };
 
   /**
@@ -47,6 +47,7 @@
     this.el = danmuEl;    //弹幕DOM元素
     this.faskDanmu = (options && options.faskDanmu) || false;
     this.faskDanmuSpace = (options && options.faskDanmu) || 0;
+    this.isPlay = true;   //弹幕是否播放
 
     for (var i = 0; i < trackNum; i++) {
       if (i === trackNum - 1) {
@@ -56,6 +57,8 @@
         this.trackList.push(new Track(trackHeight));
       }
     }
+
+    this.timer = setInterval(this._requestTrack.bind(this), 200);
   };
 
   /**
@@ -63,6 +66,9 @@
    * @param {Array[object]} [danmuList] [新插入弹幕插件的弹幕]
    */
   Danmu.prototype.updateDanmuList = function(danmuList) {
+    if (!this.isPlay) {
+      return ; //弹幕没有播放，忽视更新弹幕列表操作
+    }
     if (Object.prototype.toString.call(danmuList) !== '[object Array]') {
       throw new Error('The danmu data format is wrong!');
     }
@@ -91,11 +97,46 @@
   };
 
   /**
+   * [开始／停止弹幕的播放]
+   */
+  Danmu.prototype.toggleDanmu = function() {
+    if (this.isPlay) {
+      this.recoverDanmu();
+    }
+    else {
+      this.timer = setInterval(this._requestTrack.bind(this), 200);
+      this.isPlay = true;
+    }
+  };
+
+  /**
+   * [打开弹幕]
+   */
+  Danmu.prototype.openDanmu = function() {
+    if (this.isPlay) {
+      return ;
+    }
+    this.isPlay = true;
+    this.timer = setInterval(this._requestTrack.bind(this), 200);
+  };
+
+  /**
+   * [关闭弹幕]
+   */
+  Danmu.prototype.closeDanmu = function() {
+    if (!this.isPlay) {
+      return ;
+    }
+    this.recoverDanmu();
+  };
+
+  /**
    * [弹幕列表中的弹幕定时请求轨道]
    * @return {[type]} [description]
    */
   Danmu.prototype._requestTrack = function() {
-    this.reqTrackTimer = setInterval(function() { //弹幕列表定时请求轨道是否能够插入
+    // this.reqTrackTimer = setInterval(function() { //弹幕列表定时请求轨道是否能够插入
+    //   console.log('timer');
       for (var i = 0; i < this.danmuList.length; i++) {
         if (this.danmuList[i].isScroll) {
           continue; //弹幕已经在轨道中滚动
@@ -153,7 +194,7 @@
           }
         }
       }
-    }.bind(this), 200);
+    // }.bind(this), 200);
   };
 
   /**
@@ -201,6 +242,9 @@
     var _this = this;
     this.danmuList.splice(danmuIndex, 1); //弹幕插入完毕，删除节点
     function step() {
+      if (!danmuNode.parentNode) {
+        return ;
+      }
       var curOffset = danmuNode.style.transform.replace(/[^0-9|\-|\.]/g, '');
       var newOffset = curOffset - frameDistance;
       danmuNode.style.transform = 'translateX(' + newOffset + 'px)';
@@ -214,6 +258,7 @@
         requestAnimationFrame(step);
       }
       else {
+        // if (danmuNode.parentNode) {
         danmuNode.parentNode.removeChild(danmuNode); //从DOM中删除该弹幕节点
         for (var i = beginIndex; i <= endIndex; i++) {
           _this.trackList[i].danmuNum -= 1;
@@ -224,6 +269,22 @@
       }
     }
     requestAnimationFrame(step);
+  };
+
+  /**
+   * [关闭弹幕的时候，复原弹幕状态]
+   */
+  Danmu.prototype.recoverDanmu = function() {
+    this.el.innerHTML = '';   //清空当前还在滚动的弹幕
+    this.isPlay = false;
+    this.danmuList = [];      //因为是实时更新的弹幕数组，所以这里清空
+    clearInterval(this.reqTrackTimer);
+    this.trackList.forEach(function (track) {
+      track.thresholdV = Number.MAX_SAFE_INTEGER;
+      track.isExistWaitDanmu = false;               // 轨道是否存在还未完全进入video视口的弹幕
+      track.danmuNum = 0;                           // 轨道中滚动弹幕个数
+      track.lastScrollDanmu = null;
+    });
   };
 
   /**
