@@ -30,12 +30,22 @@
   </div>
   <script type="text/javascript" src="./dist/danmu.js"></script>
   <script type="text/javascript">
-    var danmuPlugin = new Danmu('danmu-plugin', { faskDanmu: true, faskDanmuSpace: 50 });
+    var danmuPlugin = new Danmu('danmu-plugin', { faskDanmu: true, faskDanmuSpace: 50, variety: 'video' });
     var danmuList = [];
     for (var i = 0; i < 100; i++) {
-      danmuList.push({});
+      danmuList.push({content: '弹幕呀'});
     }
     danmuPlugin.updateDanmuList(danmuList);
+    // var video = document.getElementsByTagName('video')[0];
+    // video.addEventListener('seeked', function() {
+    //   console.log('seek');
+    // }, false);
+    // video.addEventListener('mousedown', function() {
+    //   console.log('mousedown');
+    // }, false);
+    // document.addEventListener('mousemove', function() {
+    //   console.log('mousemove');
+    // }, false);
   </script>
 </body>
 </html>

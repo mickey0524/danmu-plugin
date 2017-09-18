@@ -35,6 +35,7 @@ danmuPlugin.updateDanmuList(danmuList);
 | height         | 轨道的高度 | 24 | number |
 | faskDanmu      | 是否开启弹幕追击模式，即速度快的弹幕如果不会覆盖到前面速度慢的弹幕，也会被添加进入轨道 | false | true |
 | faskDanmuSpace | 追击模式下，弹幕的最小间距      | 0 | number(比如100) |
+| variety        | 弹幕插件应用于直播还是视频      | 'live' | 'live' / 'video'(其他的输入值会被改为live) |
 
 ## API
 
@@ -49,7 +50,8 @@ updateDanmuList([{}]) 更新弹幕数组
 	size: 18,
 	color: '#FCF',
 	content: '弹幕',
-	speed: 60 //速度代表一秒移动多少px
+	speed: 60, //速度代表一秒移动多少px
+  timeStamp(视频模式下): 79 //代表在79s之后才需要被抛出道轨道
 }
 ```
 
@@ -65,6 +67,8 @@ openDanmu() 打开弹幕插件开关
 closeDanmu() 关闭弹幕插件开关
 
 toggleDanmu() 转换弹幕插件开关
+
+updateVideoTime() video模式下移动滚动条调用该函数，更新内部对象
 
 ## 示例
 
