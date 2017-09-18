@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>danmu-plugin-demo</title>
+  <style type="text/css">
+    .video-player {
+      width: 600px;
+      height: 300px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    video {
+      width: 600px;
+      height: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="video-player">
+      <video controls>
+        <source src="http://static.qiakr.com/movie/0060202.mp4" type="video/mp4">
+      </video>
+      <div class="danmu danmu-plugin">
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript" src="../dist/danmu.js"></script>
+  <script type="text/javascript">
+    var danmuPlugin = new Danmu('danmu-plugin', { faskDanmu: true, faskDanmuSpace: 50, variety: 'video' });
+    var danmuList = [];
+    for (var i = 0; i < 100; i++) {
+      danmuList.push({content: i + 1, timeStamp: i + 1});
+    }
+    danmuPlugin.updateDanmuList(danmuList);
+  </script>
+</body>
+</html>

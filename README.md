@@ -68,8 +68,6 @@ closeDanmu() 关闭弹幕插件开关
 
 toggleDanmu() 转换弹幕插件开关
 
-updateVideoTime() video模式下移动滚动条调用该函数，更新内部对象
-
 ## 示例
 
 可见 test.html，这里也给出一张示意图

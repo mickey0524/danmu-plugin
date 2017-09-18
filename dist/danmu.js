@@ -65,7 +65,9 @@
         this.trackList.push(new Track(trackHeight));
       }
     }
-
+    if (this.variety == 'video') {
+      this.videoTag.addEventListener('seeked', simpleThrottle(this._updateVideoTime.bind(this), 200), false); // 监听滚动条游标的拉动
+    }
     this.timer = setInterval(this._requestTrack.bind(this), 200);
   };
 
@@ -73,7 +75,7 @@
    * [弹幕插件更新弹幕数据]
    * @param {Array[object]} [danmuList] [新插入弹幕插件的弹幕]
    */
-  Danmu.prototype.updateDanmuList = function(danmuList) {
+  Danmu.prototype._updateDanmuList = function(danmuList) {
     if (!this.isPlay) {
       return ; //弹幕没有播放，忽视更新弹幕列表操作
     }
@@ -95,7 +97,7 @@
         danmuItem.content = '弹幕呀';
       }
       if (this.variety == 'video') {
-        danmuItem.timeStamp = danmuItem.timeStamp ? Math.ceil(danmuItem.timeStamp) : 60; // 直播环境下，没有指定弹幕时间戳，默认为0
+        danmuItem.timeStamp = danmuItem.timeStamp ? Math.ceil(danmuItem.timeStamp) : 0; // 直播环境下，没有指定弹幕时间戳，默认为0
       }
     }.bind(this));
     if (this.variety == 'video') {
@@ -160,6 +162,7 @@
    * [视频模式下，用户修改播放进度条进度，修改this.curVideoTime]
    */
   Danmu.prototype.updateVideoTime = function() {
+    console.log(this.variety);
     if (this.variety == 'video') {
       this.curVideoTime = Math.ceil(this.videoTag.currentTime);
       this._recoverDanmu();
@@ -335,6 +338,27 @@
       track.lastScrollDanmu = null;
     });
   };
+
+  /**
+   * [简单的函数节流，在delay时间内不重复请求]
+   * @param  {Function} fn    [需要执行函数节流的方法]
+   * @param  {number}   delay [时间间隔(ms)]
+   * @return {Function}
+   */
+  function simpleThrottle(fn, delay) {
+    var startTime = new Date();
+    var timer = null;
+
+    return function() {
+      if (new Date() - startTime >= delay) {
+        clearTimeout(timer);
+        fn();
+        startTime = new Date();
+      } else {
+        timer = setTimeout(fn, delay);
+      }
+    };
+  }
 
   /**
    * [开启弹幕追击模式的时候，调用该函数判断当前弹幕是否能够插入，其实就是一个追击问题]
