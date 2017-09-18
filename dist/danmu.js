@@ -23,6 +23,7 @@
    * @param {object} options   [弹幕插件的各种参数]
    */
   Danmu.prototype._init = function(className, options) {
+    options = options || {};
     var danmuEl = document.getElementsByClassName(className)[0];
     if (!checkIfCorrect(danmuEl)) {
       throw new Error('The DOM node of danmu plugin is in wrong position!');
@@ -36,7 +37,7 @@
     var videoWidth = videoContainer.offsetWidth,
         videoHeight = videoContainer.offsetHeight;
 
-    var trackHeight = (options && options.Height) || 24;
+    var trackHeight = options.height || 24;
     var reminder = videoHeight % trackHeight;
     var trackNum = Math.floor(videoHeight / trackHeight);
 
@@ -45,8 +46,8 @@
     this.trackList = [];  //轨道列表
     this.danmuList = [];  //弹幕列表
     this.el = danmuEl;    //弹幕DOM元素
-    this.faskDanmu = (options && options.faskDanmu) || false;
-    this.faskDanmuSpace = (options && options.faskDanmu) || 0;
+    this.faskDanmu = options.faskDanmu || false;
+    this.faskDanmuSpace = options.faskDanmuSpace || 0;
     this.isPlay = true;   //弹幕是否播放
 
     for (var i = 0; i < trackNum; i++) {
