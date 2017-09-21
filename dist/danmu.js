@@ -55,6 +55,7 @@
     }
     else {
       this.variety = 'live'; //应用于直播
+      this.clearScreen = options.clearScreen || false;
     }
 
     for (var i = 0; i < trackNum; i++) {
@@ -68,14 +69,14 @@
     if (this.variety == 'video') {
       this.videoTag.addEventListener('seeked', simpleThrottle(this._updateVideoTime.bind(this), 200), false); // 监听滚动条游标的拉动
     }
-    this.timer = setInterval(this._requestTrack.bind(this), 200);
+    this.reqTrackTimer = setInterval(this._requestTrack.bind(this), 200);
   };
 
   /**
    * [弹幕插件更新弹幕数据]
    * @param {Array[object]} [danmuList] [新插入弹幕插件的弹幕]
    */
-  Danmu.prototype._updateDanmuList = function(danmuList) {
+  Danmu.prototype.updateDanmuList = function(danmuList) {
     if (!this.isPlay) {
       return ; //弹幕没有播放，忽视更新弹幕列表操作
     }
@@ -130,8 +131,11 @@
       clearInterval(this.reqTrackTimer);
     }
     else {
-      this.timer = setInterval(this._requestTrack.bind(this), 200);
+      this.reqTrackTimer = setInterval(this._requestTrack.bind(this), 200);
       this.isPlay = true;
+      if (this.variety == 'live' && !this.clearScreen) {
+        this.el.style.display = 'block';
+      }
     }
   };
 
@@ -143,7 +147,10 @@
       return ;
     }
     this.isPlay = true;
-    this.timer = setInterval(this._requestTrack.bind(this), 200);
+    this.reqTrackTimer = setInterval(this._requestTrack.bind(this), 200);
+    if (this.variety == 'live' && !this.clearScreen) {
+      this.el.style.display = 'block';
+    }
   };
 
   /**
@@ -327,16 +334,29 @@
    * [关闭弹幕的时候，复原弹幕状态]
    */
   Danmu.prototype._recoverDanmu = function() {
-    this.el.innerHTML = '';   //清空当前还在滚动的弹幕
-    if (this.variety == 'live') {
-      this.danmuList = [];      //直播环境因为是实时更新的弹幕数组，所以这里清空
+    var _this = this;
+    function recoverTrack() {
+      _this.trackList.forEach(function (track) {
+        track.thresholdV = Number.MAX_SAFE_INTEGER;
+        track.isExistWaitDanmu = false;               // 轨道是否存在还未完全进入video视口的弹幕
+        track.danmuNum = 0;                           // 轨道中滚动弹幕个数
+        track.lastScrollDanmu = null;
+      });
     }
-    this.trackList.forEach(function (track) {
-      track.thresholdV = Number.MAX_SAFE_INTEGER;
-      track.isExistWaitDanmu = false;               // 轨道是否存在还未完全进入video视口的弹幕
-      track.danmuNum = 0;                           // 轨道中滚动弹幕个数
-      track.lastScrollDanmu = null;
-    });
+    if (this.variety == 'video') {
+      this.el.innerHTML = '';   //清空当前还在滚动的弹幕
+      this.danmuList = [];      //直播环境因为是实时更新的弹幕数组，所以这里清空
+      recoverTrack();
+    }
+    else {
+      if (this.clearScreen) {
+        this.el.innerHTML = '';   //清空当前还在滚动的弹幕
+        recoverTrack();
+      }
+      else {
+        this.el.style.display = 'none';
+      }
+    }
   };
 
   /**
