@@ -30,12 +30,13 @@ danmuPlugin.updateDanmuList(danmuList);
 
 ## 参数列表（options）
 
-| 参数           | 说明     | 默认值  | 可填值 |
-| ------------- |:--------:| :------:| :-----:|
-| height         | 轨道的高度 | 24 | number |
-| faskDanmu      | 是否开启弹幕追击模式，即速度快的弹幕如果不会覆盖到前面速度慢的弹幕，也会被添加进入轨道 | false | true |
-| faskDanmuSpace | 追击模式下，弹幕的最小间距      | 0 | number(比如100) |
-| variety        | 弹幕插件应用于直播还是视频      | 'live' | 'live' / 'video'(其他的输入值会被改为live) |
+| 参数             | 说明     | 默认值  | 可填值 |
+| ---------------- |:--------:| :------:| :-----:|
+| height           | 轨道的高度 | 24 | number |
+| faskDanmu        | 是否开启弹幕追击模式，即速度快的弹幕如果不会覆盖到前面速度慢的弹幕，也会被添加进入轨道 | false | true |
+| faskDanmuSpace   | 追击模式下，弹幕的最小间距      | 0 | number(比如100) |
+| variety          | 弹幕插件应用于直播还是视频      | 'live' | 'live' / 'video'(其他的输入值会被改为live) |
+| clearScreen(live)| 直播模式下选择关闭弹幕的时候是否清屏 | false | true/false |
 
 ## API
 
