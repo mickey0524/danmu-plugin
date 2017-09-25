@@ -6,6 +6,7 @@
 
 (function(window) {
 
+  var SUPER_DANMU_TIME = '5000'; //超级弹幕的时长
   /**
    * [弹幕构造函数，用于初始化一个弹幕插件]
    * @param {string} className [类选择器，如果有重复的话，则取第一个]
@@ -169,7 +170,6 @@
    * [视频模式下，用户修改播放进度条进度，修改this.curVideoTime]
    */
   Danmu.prototype.updateVideoTime = function() {
-    console.log(this.variety);
     if (this.variety == 'video') {
       this.curVideoTime = Math.ceil(this.videoTag.currentTime);
       this._recoverDanmu();
@@ -196,9 +196,13 @@
         continue; //视频模式下，没有到播放时间戳的弹幕跳过
       }
       for (var j = 0; j < this.trackList.length; j++) {
-        if (this.trackList[j].isExistWaitDanmu || //还有未完全进入video视口的弹幕，轨道不能用
+        if (this.danmuList[i].isSuperDanmu && this.trackList[j].isExistSuperDanmu) { //超级弹幕
+          continue;
+        }
+        if (!this.danmuList[i].isSuperDanmu &&  //普通弹幕
+           (this.trackList[j].isExistWaitDanmu || //还有未完全进入video视口的弹幕，轨道不能用
            (this.trackList[j].thresholdV < this.danmuList[i].speed &&
-           (!this.faskDanmu || !compareSpeed(this.trackList[j], this.danmuList[i], this.videoWidth)))) {
+           (!this.faskDanmu || !compareSpeed(this.trackList[j], this.danmuList[i], this.videoWidth))))) {
           continue;
         }
         if (this.danmuList[i].size > this.trackList[j].trackHeight) { //需要拼接轨道
@@ -211,18 +215,28 @@
             var curIndex = j + 1;
             var trackfound = false;
             while (curIndex < this.trackList.length) {
-              if (this.trackList[curIndex].isExistWaitDanmu ||
+              if (this.danmuList[i].isSuperDanmu && this.trackList[curIndex].isExistSuperDanmu) {
+                j = curIndex;
+                break;
+              }
+              if (!this.danmuList[i].isSuperDanmu &&
+                 (this.trackList[curIndex].isExistWaitDanmu ||
                  (this.trackList[curIndex].thresholdV < this.danmuList[i].speed &&
-                 (!this.faskDanmu || !compareSpeed(this.trackList[curIndex], this.danmuList[i], this.videoWidth)))) {
+                 (!this.faskDanmu || !compareSpeed(this.trackList[curIndex], this.danmuList[i], this.videoWidth))))) {
                 j = curIndex;
                 break;
               }
               curTrackHeight += this.trackList[curIndex].trackHeight;
               if (curTrackHeight > danmuSize) { //存在多个轨道拼接能够容纳该弹幕
                 for (var beginIndex = j; beginIndex <= curIndex; beginIndex++) {
-                  this.trackList[beginIndex].isExistWaitDanmu = true;
-                  this.trackList[beginIndex].thresholdV = this.danmuList[i].speed;
-                  this.trackList[beginIndex].danmuNum += 1;
+                  if (this.danmuList[i].isSuperDanmu) {
+                    this.trackList[beginIndex].isExistSuperDanmu = true;
+                  }
+                  else {
+                    this.trackList[beginIndex].isExistWaitDanmu = true;
+                    this.trackList[beginIndex].thresholdV = this.danmuList[i].speed;
+                    this.trackList[beginIndex].danmuNum += 1;
+                  }
                 }
                 this.danmuList[i].isScroll = true;
                 this._danmuInsert(i, j, curIndex);
@@ -240,13 +254,18 @@
           }
         }
         else {
-          this.trackList[j].isExistWaitDanmu = true;
-          this.trackList[j].thresholdV = this.danmuList[i].speed;
-          this.trackList[j].danmuNum += 1;
           this.danmuList[i].isScroll = true;
-          this._danmuInsert(i, j, j);
-          if (this.variety == 'live') {
-            i -= 1; //_danmuAnimate函数中删除了节点，不剪一会遗漏循环项
+          if (this.danmuList[i].isSuperDanmu) {  //兼容超级弹幕
+            this.trackList[j].isExistSuperDanmu = true;
+          }
+          else {
+            this.trackList[j].isExistWaitDanmu = true;
+            this.trackList[j].thresholdV = this.danmuList[i].speed;
+            this.trackList[j].danmuNum += 1;
+            this._danmuInsert(i, j, j);
+            if (this.variety == 'live') {
+              i -= 1; //_danmuAnimate函数中删除了节点，不剪一会遗漏循环项
+            }
           }
           break;
         }
@@ -264,6 +283,7 @@
     var danmuSize = this.danmuList[danmuIndex].size;
     var danmuColor = this.danmuList[danmuIndex].color;
     var danmuContent = this.danmuList[danmuIndex].content;
+    var isSuperDanmu = this.danmuList[danmuIndex].isSuperDanmu;
 
     var HeightSum = 0;
     for (var i = beginIndex; i <= endIndex; i++) {
@@ -274,13 +294,20 @@
     var danmuNode = document.createElement('span');
     danmuNode.className = 'danmu-node';
     danmuNode.innerHTML = danmuContent;
-    danmuNode.style.cssText = 'position: absolute; display: inline-block; color: ' + danmuColor +
-                              '; font-size: ' + (danmuSize) + 'px; line-height: ' + danmuSize + 'px; top: ' + offsetTop +
-                              'px; transform: translateX(' + offsetLeft + 'px);';
-    this.el.appendChild(danmuNode);
-    for (var i = beginIndex; i <= endIndex; i++) {
-      this.trackList[i].lastScrollDanmu = danmuNode;
+    var cssText = 'position: absolute; display: inline-block; color: ' + danmuColor +
+                  '; font-size: ' + (danmuSize) + 'px; line-height: ' + danmuSize + 'px' +
+                  '; top: ' + offsetTop + 'px;';
+
+    if (isSuperDanmu) {
+      danmuNode.style.cssText = cssText + ' left: 50%; z-index: 100; transform: translateX(-50%);';
     }
+    else {
+      danmuNode.style.cssText = cssText + ' transform: translateX(' + offsetLeft + 'px);';
+      for (var i = beginIndex; i <= endIndex; i++) {
+        this.trackList[i].lastScrollDanmu = danmuNode;
+      }
+    }
+    this.el.appendChild(danmuNode);
     this._danmuAnimate(danmuIndex, danmuNode, beginIndex, endIndex);
   };
 
@@ -292,42 +319,52 @@
    * @param {number} [endIndex] [结束的轨道index]
    */
   Danmu.prototype._danmuAnimate = function(danmuIndex, danmuNode, beginIndex, endIndex) {
-    var danmuWidth = danmuNode.offsetWidth;
-    var danmuSpeed = this.danmuList[danmuIndex].speed; //弹幕的速度定义是1s移动多少px
-    var frameDistance = danmuSpeed / 60; // 1s requestAnimationFrame渲染60次
-    var changeNoWait = true;
-    if (this.variety == 'live') {
-      this.danmuList.splice(danmuIndex, 1); //弹幕插入完毕，删除节点
-    }
-    var _this = this;
-    function step() {
-      if (!danmuNode.parentNode) {
-        return ;
-      }
-      var curOffset = danmuNode.style.transform.replace(/[^0-9|\-|\.]/g, '');
-      var newOffset = curOffset - frameDistance;
-      danmuNode.style.transform = 'translateX(' + newOffset + 'px)';
-      if (newOffset > -danmuWidth) {
-        if (changeNoWait && (newOffset < _this.videoWidth - danmuWidth)) {
-          for (var i = beginIndex; i <= endIndex; i++) {
-            _this.trackList[i].isExistWaitDanmu = false;
-          }
-          changeNoWait = false;
-        }
-        requestAnimationFrame(step);
-      }
-      else {
-        // if (danmuNode.parentNode) {
-        danmuNode.parentNode.removeChild(danmuNode); //从DOM中删除该弹幕节点
+    if (this.danmuList[danmuIndex].isSuperDanmu) {
+      setTimeout(function() {
+        danmuNode.parentNode.removeChild(danmuNode);
         for (var i = beginIndex; i <= endIndex; i++) {
-          _this.trackList[i].danmuNum -= 1;
-          if (_this.trackList[i].danmuNum === 0) {
-            _this.trackList[i].thresholdV = Number.MAX_SAFE_INTEGER;
+          this.trackList[i].isExistSuperDanmu = false;
+        }
+      }.bind(this), SUPER_DANMU_TIME);
+    }
+    else {
+      var danmuWidth = danmuNode.offsetWidth;
+      var danmuSpeed = this.danmuList[danmuIndex].speed; //弹幕的速度定义是1s移动多少px
+      var frameDistance = danmuSpeed / 60; // 1s requestAnimationFrame渲染60次
+      var changeNoWait = true;
+      if (this.variety == 'live') {
+        this.danmuList.splice(danmuIndex, 1); //弹幕插入完毕，删除节点
+      }
+      var _this = this;
+      function step() {
+        if (!danmuNode.parentNode) {
+          return ;
+        }
+        var curOffset = danmuNode.style.transform.replace(/[^0-9|\-|\.]/g, '');
+        var newOffset = curOffset - frameDistance;
+        danmuNode.style.transform = 'translateX(' + newOffset + 'px)';
+        if (newOffset > -danmuWidth) {
+          if (changeNoWait && (newOffset < _this.videoWidth - danmuWidth)) {
+            for (var i = beginIndex; i <= endIndex; i++) {
+              _this.trackList[i].isExistWaitDanmu = false;
+            }
+            changeNoWait = false;
+          }
+          requestAnimationFrame(step);
+        }
+        else {
+          // if (danmuNode.parentNode) {
+          danmuNode.parentNode.removeChild(danmuNode); //从DOM中删除该弹幕节点
+          for (var i = beginIndex; i <= endIndex; i++) {
+            _this.trackList[i].danmuNum -= 1;
+            if (_this.trackList[i].danmuNum === 0) {
+              _this.trackList[i].thresholdV = Number.MAX_SAFE_INTEGER;
+            }
           }
         }
       }
+      requestAnimationFrame(step);
     }
-    requestAnimationFrame(step);
   };
 
   /**
@@ -345,7 +382,7 @@
     }
     if (this.variety == 'video') {
       this.el.innerHTML = '';   //清空当前还在滚动的弹幕
-      this.danmuList = [];      //直播环境因为是实时更新的弹幕数组，所以这里清空
+      this.danmuList = [];      //视频环境因为是根据时间的弹幕数组，所以这里清空
       recoverTrack();
     }
     else {
@@ -406,6 +443,7 @@
    * @param {number} [trackHeight] [轨道的高度]
    */
   function Track(trackHeight) {
+    this.isExistSuperDanmu = false;              // 轨道是否存在超级弹幕，超级弹幕指的是不滚动，显示在轨道中间的
     this.trackHeight = trackHeight;              // 轨道的高度
     this.thresholdV = Number.MAX_SAFE_INTEGER;   // 轨道当前的弹幕限制速度
     this.isExistWaitDanmu = false;               // 轨道是否存在还未完全进入video视口的弹幕

@@ -52,7 +52,8 @@ updateDanmuList([{}]) 更新弹幕数组
 	color: '#FCF',
 	content: '弹幕',
 	speed: 60, //速度代表一秒移动多少px
-  timeStamp(视频模式下): 79 //代表在79s之后才需要被抛出道轨道
+  timeStamp(视频模式下): 79, //代表在79s之后才需要被抛出道轨道
+  isSuperDanmu: true/false //代表是否为超级弹幕，超级弹幕就是类似B站那种不滚动然后居中显示在所有弹幕上面的弹幕
 }
 ```
 

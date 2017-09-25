@@ -33,7 +33,12 @@
     var danmuPlugin = new Danmu('danmu-plugin', { faskDanmu: true, faskDanmuSpace: 50 });
     var danmuList = [];
     for (var i = 0; i < 100; i++) {
-      danmuList.push({});
+      if (i % 10 == 0) {
+        danmuList.push({ isSuperDanmu: true });
+      }
+      else {
+        danmuList.push({});
+      }
     }
     danmuPlugin.updateDanmuList(danmuList);
   </script>
