@@ -1,6 +1,6 @@
 {
   "name": "danmu-plugin",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A danmu plugin which can be used in video tag",
   "main": "index.js",
   "directories": {
