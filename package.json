@@ -1,0 +1,24 @@
+{
+  "name": "danmu-plugin",
+  "version": "0.1.0",
+  "description": "A danmu plugin which can be used in video tag",
+  "main": "index.js",
+  "directories": {
+    "example": "example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mickey0524/danmu-plugin.git"
+  },
+  "keywords": [
+    "js",
+    "video",
+    "danmu"
+  ],
+  "author": "Mickey0524",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mickey0524/danmu-plugin/issues"
+  },
+  "homepage": "https://github.com/mickey0524/danmu-plugin#readme"
+}

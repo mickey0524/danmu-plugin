@@ -14,7 +14,15 @@ A danmu plugin which can be used in video tag
 
 ## 使用方法（usage）
 
-引用js，Danmu类会被挂在到window对象上，调用new Danmu(selector, options)创建一个实例即可
+* 使用require
+
+```
+npm install danmu-plugin --save
+...
+const Danmu = require('danmn-plugin');
+```
+
+* 引用js，Danmu类会被挂在到window对象上，调用new Danmu(selector, options)创建一个实例即可
 
 ```
 <script src="../dist/danmu.min.js"></script>
