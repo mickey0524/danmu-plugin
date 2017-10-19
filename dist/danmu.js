@@ -98,6 +98,9 @@
       if (!danmuItem.content) {
         danmuItem.content = '弹幕呀';
       }
+      if (!danmuItem.opacity) {
+        danmuItem.opacity = 1;
+      }
       if (this.variety == 'video') {
         danmuItem.timeStamp = danmuItem.timeStamp ? Math.ceil(danmuItem.timeStamp) : 0; // 直播环境下，没有指定弹幕时间戳，默认为0
       }
@@ -284,6 +287,7 @@
     var danmuColor = this.danmuList[danmuIndex].color;
     var danmuContent = this.danmuList[danmuIndex].content;
     var isSuperDanmu = this.danmuList[danmuIndex].isSuperDanmu;
+    var danmuOpacity = this.danmuList[danmuIndex].opacity;
 
     var HeightSum = 0;
     for (var i = beginIndex; i <= endIndex; i++) {
@@ -296,7 +300,7 @@
     danmuNode.innerHTML = danmuContent;
     var cssText = 'position: absolute; display: inline-block; color: ' + danmuColor +
                   '; font-size: ' + (danmuSize) + 'px; line-height: ' + danmuSize + 'px' +
-                  '; top: ' + offsetTop + 'px;';
+                  '; top: ' + offsetTop + 'px; opacity: ' + danmuOpacity + ';';
 
     if (isSuperDanmu) {
       danmuNode.style.cssText = cssText + ' left: 50%; z-index: 100; transform: translateX(-50%);';
