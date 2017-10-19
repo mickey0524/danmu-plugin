@@ -4,15 +4,17 @@
  * 没有_开头的是public函数，是Danmu插件暴露给使用者的函数，可以调用
  */
 
-(function(window) {
-
+(function(global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+  (global.Layzr = factory());
+}(this, (function() {
   var SUPER_DANMU_TIME = '5000'; //超级弹幕的时长
   /**
    * [弹幕构造函数，用于初始化一个弹幕插件]
    * @param {string} className [类选择器，如果有重复的话，则取第一个]
    * @param {object} options   [弹幕插件的各种参数]
    */
-  window.Danmu = function(className, options) {
+  Danmu = function(className, options) {
     this._init(className, options);
     // this._requestTrack();
   };
@@ -492,4 +494,6 @@
     var speed = Math.ceil(Math.random() * videoWidth / 2);
     return Math.max(speed, MIN_SPEED);
   }
-})(window);
+
+  return Danmu;
+})));
